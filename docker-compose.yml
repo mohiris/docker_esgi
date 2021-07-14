@@ -1,0 +1,158 @@
+version: '2'
+
+services:
+
+    ############################################
+    #           Server Configuration           #
+    ############################################
+
+    nginx:
+        container_name: nginx
+        image: nginx
+        build: docker/nginx
+        ports:
+            - "80:80"
+        links:
+            - php
+        volumes_from:
+            - php
+        volumes:
+            - ./var/logs/nginx/:/var/log/nginx
+
+    php:
+        container_name: php
+        volumes:
+            - ./:/var/www/app
+            - ./var/logs:/var/www/app/var/logs
+        build: docker/php
+        ports:
+            - "9000:9000"
+        links:
+            - db
+            - mailcatcher
+
+    ############################################
+    #          Database Configuration          #
+    ############################################
+
+    db:
+        container_name: db
+        image: mariadb
+        environment:
+            MYSQL_ROOT_PASSWORD: app_2
+            MYSQL_DATABASE: app_2
+            MYSQL_USER: app_2
+            MYSQL_PASSWORD: app_2
+        ports:
+            - "3306:3306"
+        volumes:
+            - db:/var/lib/mysql
+
+    phpmyadmin:
+        container_name: phpmyadmin
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - "8080:80"
+        links:
+            - db
+
+    ############################################
+    #            Mail Configuration            #
+    ############################################
+
+    mailcatcher:
+        container_name: mailtrap
+        image: eaudeweb/mailtrap
+        ports:
+            - "1080:1080"
+
+    #############################
+    #                           #
+    # To do                     #
+    # _________________________ #
+    #                           #
+    # Install Elasticsearch     #
+    # Install Logstash          #
+    #                           #
+    #############################
+    elasticsearch:
+        image: khezen/elasticsearch:5
+        environment:
+            HOSTS: '[127.0.0.1]'
+            HEAP_SIZE: 1g
+            ELASTIC_PWD: changeme
+            KIBANA_PWD: changeme
+            LOGSTASH_PWD: changeme
+            BEATS_PWD: changeme
+            CA_PWD: changeme
+            KS_PWD: changeme
+            TS_PWD: changeme
+        volumes:
+             - /etc/elasticsearch:/usr/share/elasticsearch/config
+             - /data/elasticsearch:/usr/share/elasticsearch/data
+        ports:
+             - "9200:9200"
+             - "9300:9300"
+        networks:
+            - elk
+        restart: unless-stopped
+
+    kibana:
+        links:
+            - elasticsearch
+        image: khezen/kibana:5
+        environment:
+            KIBANA_PWD: changeme
+            ELASTICSEARCH_HOST: elasticsearch
+            ELASTICSEARCH_PORT: 9200
+        volumes:
+            - /etc/kibana:/etc/kibana
+            - /etc/elasticsearch/searchguard/ssl:/etc/elasticsearch/searchguard/ssl
+        ports:
+             - "5601:5601"
+        networks:
+            - elk
+        restart: unless-stopped
+
+    logstash:
+        links:
+            - elasticsearch
+        image: khezen/logstash:5
+        environment:
+            HEAP_SIZE: 1g
+            LOGSTASH_PWD: password123
+            ELASTICSEARCH_HOST: elasticsearch
+            ELASTICSEARCH_PORT: 9200
+            TS_PWD: password123
+        volumes:
+            - /etc/logstash:/etc/logstash/conf.d
+            - /etc/elasticsearch/searchguard/ssl:/etc/elasticsearch/searchguard/ssl
+        ports:
+             - "5000:5000"
+             - "5001:5001/udp"
+        networks:
+            - elk
+        restart: unless-stopped
+
+    elastalert:
+        links:
+            - elasticsearch
+        image: khezen/elastalert
+        environment:
+            ELASTALERT_USER: elastalert
+            ELASTALERT_PWD: password123
+            ELASTICSEARCH_HOST: elasticsearch
+            ELASTICSEARCH_PORT: 9200
+        volumes:
+            - /etc/elastalert:/etc/elastalert
+            - /usr/share/elastalert/rules:/usr/share/elastalert/rules
+        networks:
+            - elk
+        restart: unless-stopped
+
+networks:
+  elk:
+    driver: bridge
+
+volumes:
+    db: ~
