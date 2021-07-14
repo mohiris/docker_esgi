@@ -1,0 +1,133 @@
+version: '2'
+
+services:
+
+  elasticsearch:
+    image: khezen/elasticsearch:5
+    deploy:
+      mode: replicated
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    environment:
+        HEAP_SIZE: 1g
+        HOSTS: '["elasticsearch"]'
+        MINIMUM_MASTER_NODES: 2
+        ELASTIC_PWD: changeme
+        KIBANA_PWD: changeme
+        LOGSTASH_PWD: changeme
+        BEATS_PWD: changeme
+        CA_PWD: changeme
+        KS_PWD: changeme
+        TS_PWD: changeme
+        SERVICE_PORTS: 9200, 9300
+        TCP_PORTS: 9200, 9300
+    volumes:
+      - /etc/elasticsearch:/usr/share/elasticsearch/config
+      - /data/elasticsearch:/usr/share/elasticsearch/data
+    hostname: elasticsearch
+    networks:
+      - elk
+
+  kibana:
+    image: khezen/kibana:5
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    environment:
+        KIBANA_PWD: changeme
+        ELASTICSEARCH_HOST: elasticsearch
+        ELASTICSEARCH_PORT: 9200
+        SERVICE_PORTS: 5601
+        TCP_PORTS: 5601
+    volumes:
+      - /etc/kibana:/etc/kibana
+      - /etc/elasticsearch/searchguard/ssl:/etc/elasticsearch/searchguard/ssl
+    hostname: kibana
+    networks:
+      - elk
+
+  logstash:
+    image: khezen/logstash:5
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    environment:
+        HEAP_SIZE: 1g
+        LOGSTASH_PWD: changeme
+        ELASTICSEARCH_HOST: elasticsearch
+        ELASTICSEARCH_PORT: 9200
+        TS_PWD: changeme
+        SERVICE_PORTS: 5000
+        TCP_PORTS: 5000
+    volumes:
+      - /etc/logstash:/etc/logstash/conf.d
+      - /etc/elasticsearch/searchguard/ssl:/etc/elasticsearch/searchguard/ssl
+    hostname: logstash
+    networks:
+      - elk
+
+  elastalert:
+    image: khezen/elastalert:support_es5
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    environment:
+      ELASTALERT_USER: elastalert
+      ELASTALERT_PWD: changeme
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: 9200
+    volumes:
+        - /etc/elastalert:/etc/elastalert
+        - /usr/share/elastalert/rules:/usr/share/elastalert/rules
+    networks:
+        - elk
+
+  load_balancer:
+    image: dockercloud/haproxy:1.6.2
+    depends_on:
+      - kibana
+      - elasticsearch
+      - logstash
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      STATS_PORT: 9000
+      STATS_AUTH: stats:changeme
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - elk
+    ports:
+      - "8081:9000"
+      - "5601:5601"
+      - "9200:9200"
+      - "9300:9300"
+      - "5000:5000"
+
+networks:
+  elk:
+    driver: overlay
