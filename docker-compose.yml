@@ -1,4 +1,4 @@
-version: '3'
+version: '2'
 
 services:
 
@@ -21,7 +21,7 @@ services:
     php:
         container_name: php
         volumes:
-            - ./:/var/www/webapp
+            - ./webapp/:/var/www/webapp
             - ./var/logs:/var/www/webapp/var/logs
         build: docker/php
         ports:
@@ -38,10 +38,10 @@ services:
         container_name: db
         image: mariadb
         environment:
-            MYSQL_ROOT_PASSWORD: app_2
-            MYSQL_DATABASE: app_2
-            MYSQL_USER: app_2
-            MYSQL_PASSWORD: app_2
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: friends
+            MYSQL_USER: root
+            MYSQL_PASSWORD: root
         ports:
             - "3307:3307"
         volumes:
@@ -74,5 +74,7 @@ services:
     # Install Logstash          #
     #                           #
     #############################
+
+    
 volumes:
     db: ~
