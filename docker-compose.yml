@@ -79,13 +79,13 @@ services:
         environment:
             HOSTS: '[127.0.0.1]'
             HEAP_SIZE: 1g
-            ELASTIC_PWD: changeme
-            KIBANA_PWD: changeme
-            LOGSTASH_PWD: changeme
-            BEATS_PWD: changeme
-            CA_PWD: changeme
-            KS_PWD: changeme
-            TS_PWD: changeme
+            ELASTIC_PWD: password
+            KIBANA_PWD: password
+            LOGSTASH_PWD: password
+            BEATS_PWD: password
+            CA_PWD: password
+            KS_PWD: password
+            TS_PWD: password
         volumes:
              - /etc/elasticsearch:/usr/share/elasticsearch/config
              - /data/elasticsearch:/usr/share/elasticsearch/data
@@ -101,7 +101,7 @@ services:
             - elasticsearch
         image: khezen/kibana:5
         environment:
-            KIBANA_PWD: changeme
+            KIBANA_PWD: password
             ELASTICSEARCH_HOST: elasticsearch
             ELASTICSEARCH_PORT: 9200
         volumes:
@@ -119,10 +119,10 @@ services:
         image: khezen/logstash:5
         environment:
             HEAP_SIZE: 1g
-            LOGSTASH_PWD: changeme
+            LOGSTASH_PWD: password
             ELASTICSEARCH_HOST: elasticsearch
             ELASTICSEARCH_PORT: 9200
-            TS_PWD: changeme
+            TS_PWD: password
         volumes:
             - /etc/logstash:/etc/logstash/conf.d
             - /etc/elasticsearch/searchguard/ssl:/etc/elasticsearch/searchguard/ssl
@@ -139,7 +139,7 @@ services:
         image: khezen/elastalert
         environment:
             ELASTALERT_USER: elastalert
-            ELASTALERT_PWD: changeme
+            ELASTALERT_PWD: password
             ELASTICSEARCH_HOST: elasticsearch
             ELASTICSEARCH_PORT: 9200
         volumes:
