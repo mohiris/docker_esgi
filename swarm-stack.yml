@@ -25,6 +25,7 @@ services:
         TS_PWD: changeme
         SERVICE_PORTS: 9200, 9300
         TCP_PORTS: 9200, 9300
+        - discovery.type=single-node
     volumes:
       - /etc/elasticsearch:/usr/share/elasticsearch/config
       - /data/elasticsearch:/usr/share/elasticsearch/data

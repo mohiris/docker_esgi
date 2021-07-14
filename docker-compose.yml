@@ -149,6 +149,15 @@ services:
             - elk
         restart: unless-stopped
 
+    redis:
+        links:
+            - php
+        environment: 
+            - REDIS_URL=redis://cache
+        image: redis
+        container_name: cache
+        expose:
+            - 6379
 networks:
   elk:
     driver: bridge
